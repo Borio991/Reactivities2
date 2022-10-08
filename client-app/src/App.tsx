@@ -1,29 +1,25 @@
 import { useEffect, useState } from "react";
-import reactLogo from "./assets/react.svg";
-import "./App.css";
-import axios from "axios";
-import { Header, List } from "semantic-ui-react";
+import { Container } from "semantic-ui-react";
+import Navbar from "../components/Layout/Navbar";
+import Dashboard from "../components/Layout/Dashboard";
+import { useStore } from "../stores/store";
+import { observer } from "mobx-react-lite";
 
 function App() {
-  const [activities, setActivities] = useState([]);
+  const { activityStore } = useStore();
+  console.log("App is Running");
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/activities")
-      .then(function (response: any) {
-        setActivities(response.data);
-        console.log(response.data);
-      });
+    activityStore.loadActivities();
   }, []);
+
   return (
-    <div className="App">
-      <Header icon="users" as="h2" content="Activities" />
-      <List>
-        {activities.map((activity: any) => (
-          <List.Item key={activity.id}>{activity.title}</List.Item>
-        ))}
-      </List>
-    </div>
+    <>
+      <Navbar />
+      <Container style={{ marginTop: "100px" }}>
+        <Dashboard />
+      </Container>
+    </>
   );
 }
 
-export default App;
+export default observer(App);
