@@ -3,6 +3,7 @@ import { useStore } from "../../stores/store";
 
 function Navbar() {
   const { activityStore } = useStore();
+  console.log("navbar is Running");
 
   return (
     <Menu inverted fixed="top">

@@ -4,6 +4,8 @@ import { observer } from "mobx-react-lite";
 
 function DetailsActivity() {
   const { activityStore } = useStore();
+  console.log("details is Running");
+
   return (
     <Card fluid>
       <Image src={`/assets/categoryImages/${activityStore.selectedActivity?.category}.jpg`} wrapped ui={false} />
@@ -17,7 +19,7 @@ function DetailsActivity() {
       <Card.Content extra>
         <Button.Group widths="2">
           <Button content="Edit" color="blue" basic onClick={() => activityStore.setEditMode(true)} />
-          <Button content="Cancel" color="grey" basic onClick={() => activityStore.selectActivity("")} />
+          <Button content="Cancel" color="grey" basic onClick={() => activityStore.selectActivity(undefined)} />
         </Button.Group>
       </Card.Content>
     </Card>

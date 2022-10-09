@@ -1,7 +1,7 @@
-import axios from "axios";
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, runInAction } from "mobx";
 import { Activity } from "../models/ActivityModel";
 import { v4 as uuid } from "uuid";
+import agent from "../api/agent";
 
 export default class ActivityStore {
   constructor() {
@@ -11,15 +11,40 @@ export default class ActivityStore {
   activities: Activity[] = [];
   selectedActivity: Activity | undefined = undefined;
   editmode: boolean = false;
+  initialLoading: boolean = false;
+  submitting: boolean = false;
 
   // Actions
+  get ActivitiesByDate() {
+    return Array.from(
+      this.activities.slice().sort(function (a: any, b: any) {
+        return Date.parse(b.date) - Date.parse(a.date);
+      })
+    );
+  }
   loadActivities = async () => {
-    const response = await axios.get("http://localhost:5000/api/activities");
-    this.activities = response.data;
+    this.initialLoading = true;
+    try {
+      const response = await agent.Activities.list();
+      runInAction(() => {
+        for (let i = 0; i < response.length; i++) {
+          const activity = response[i];
+          activity.date = activity.date.split("T")[0];
+        }
+        this.activities = response;
+        this.initialLoading = false;
+      });
+    } catch (error) {
+      this.initialLoading = true;
+      console.log(error);
+    }
   };
 
-  selectActivity = (id: string) => {
+  selectActivity = (id?: string) => {
     this.selectedActivity = this.activities.find((x) => x.id === id);
+    if (!id) {
+      this.editmode = false;
+    }
   };
 
   setEditMode = (state: boolean) => {
@@ -31,23 +56,57 @@ export default class ActivityStore {
     this.editmode = true;
   };
 
-  createActivity = (activity: Activity) => {
-    activity.id = uuid();
-    this.activities.push(activity);
-    this.selectedActivity = activity;
-    this.editmode = false;
+  createActivity = async (activity: Activity) => {
+    this.submitting = true;
+    try {
+      activity.id = uuid();
+      await agent.Activities.create(activity);
+      runInAction(() => {
+        this.activities.push(activity);
+        this.selectedActivity = activity;
+        this.submitting = false;
+        this.editmode = false;
+      });
+    } catch (error) {
+      this.submitting = false;
+      console.log(error);
+    }
   };
-  editActivity = (activity: Activity) => {
-    this.activities = [...this.activities.filter((x) => x.id !== activity.id), activity];
-    this.selectedActivity = activity;
-    this.editmode = false;
+  editActivity = async (activity: Activity) => {
+    this.setSubmitting(true);
+    try {
+      await agent.Activities.update(activity);
+      runInAction(() => {
+        this.activities = [...this.activities.filter((x) => x.id !== activity.id), activity];
+        this.selectedActivity = activity;
+        this.setSubmitting(false);
+        this.editmode = false;
+      });
+    } catch (error) {
+      this.setSubmitting(false);
+      console.log(error);
+    }
   };
 
-  deleteActivity = (id: string) => {
-    this.activities = [...this.activities.filter((x) => x.id !== id)];
-    if (this.selectedActivity?.id === id) {
-      this.selectedActivity = undefined;
+  deleteActivity = async (id: string) => {
+    this.setSubmitting(true);
+    try {
+      await agent.Activities.delete(id);
+      runInAction(() => {
+        this.activities = [...this.activities.filter((x) => x.id !== id)];
+        if (this.selectedActivity?.id === id) {
+          this.selectedActivity = undefined;
+        }
+        this.setSubmitting(false);
+        this.editmode = false;
+      });
+    } catch (error) {
+      this.setSubmitting(false);
+      console.log(error);
     }
-    this.editmode = false;
+  };
+
+  setSubmitting = (state: boolean) => {
+    this.submitting = state;
   };
 }
