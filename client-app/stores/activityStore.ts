@@ -1,12 +1,12 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { Activity } from "../models/ActivityModel";
-import { v4 as uuid } from "uuid";
 import agent from "../api/agent";
 
 export default class ActivityStore {
   constructor() {
     makeAutoObservable(this);
   }
+
   // observable
   activities: Activity[] = [];
   selectedActivity: Activity | undefined = undefined;
@@ -15,13 +15,7 @@ export default class ActivityStore {
   submitting: boolean = false;
 
   // Actions
-  get ActivitiesByDate() {
-    return Array.from(
-      this.activities.slice().sort(function (a: any, b: any) {
-        return Date.parse(b.date) - Date.parse(a.date);
-      })
-    );
-  }
+
   loadActivities = async () => {
     this.initialLoading = true;
     try {
@@ -40,32 +34,51 @@ export default class ActivityStore {
     }
   };
 
-  selectActivity = (id?: string) => {
-    this.selectedActivity = this.activities.find((x) => x.id === id);
-    if (!id) {
-      this.editmode = false;
+  get ActivitiesByDate() {
+    return Array.from(
+      this.activities.slice().sort(function (a: any, b: any) {
+        return Date.parse(b.date) - Date.parse(a.date);
+      })
+    );
+  }
+
+  get groupedActivities() {
+    return Object.entries(
+      this.ActivitiesByDate.reduce((activities, activity) => {
+        const date = activity.date;
+        activities[date] = activities[date] ? [...activities[date], activity] : [activity];
+        return activities;
+      }, {} as { [key: string]: Activity[] })
+    );
+  }
+
+  loadActivity = async (id: string) => {
+    let activity = this.activities.find((x) => x.id === id);
+    if (activity) {
+      this.selectedActivity = activity;
+      return activity;
+    } else {
+      try {
+        activity = await agent.Activities.details(id);
+        runInAction(() => {
+          activity!.date = activity!.date.split("T")[0];
+          this.selectedActivity = activity;
+        });
+        return activity;
+      } catch (error) {
+        console.log(error);
+      }
     }
-  };
-
-  setEditMode = (state: boolean) => {
-    this.editmode = state;
-  };
-
-  openCreateForm = () => {
-    this.selectedActivity = undefined;
-    this.editmode = true;
   };
 
   createActivity = async (activity: Activity) => {
     this.submitting = true;
     try {
-      activity.id = uuid();
       await agent.Activities.create(activity);
       runInAction(() => {
         this.activities.push(activity);
         this.selectedActivity = activity;
         this.submitting = false;
-        this.editmode = false;
       });
     } catch (error) {
       this.submitting = false;
@@ -80,7 +93,6 @@ export default class ActivityStore {
         this.activities = [...this.activities.filter((x) => x.id !== activity.id), activity];
         this.selectedActivity = activity;
         this.setSubmitting(false);
-        this.editmode = false;
       });
     } catch (error) {
       this.setSubmitting(false);

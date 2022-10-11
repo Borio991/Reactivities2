@@ -1,25 +1,21 @@
-import { Grid } from "semantic-ui-react";
+import { Container, Grid } from "semantic-ui-react";
 import ListActivity from "../ui/activities/ListActivity";
-import DetailActivity from "../ui/activities/DetailsActivity";
-import FormActivity from "../ui/activities/FormActivity";
 import { useStore } from "../../stores/store";
 import { observer } from "mobx-react-lite";
+import FilterActivity from "../ui/activities/FilterActivity";
 
 function Dashboard() {
-  const { activityStore } = useStore();
-  console.log("Dashboard is Running");
-
   return (
-    <Grid>
-      <Grid.Column width="10">
-        <ListActivity />
-      </Grid.Column>
-      <Grid.Column width="6">
-        {activityStore.selectedActivity && <DetailActivity />}
-
-        {activityStore.editmode && <FormActivity key={activityStore.selectedActivity?.id} />}
-      </Grid.Column>
-    </Grid>
+    <Container style={{ marginTop: "100px" }}>
+      <Grid>
+        <Grid.Column width="10">
+          <ListActivity />
+        </Grid.Column>
+        <Grid.Column width="6">
+          <FilterActivity />
+        </Grid.Column>
+      </Grid>
+    </Container>
   );
 }
 

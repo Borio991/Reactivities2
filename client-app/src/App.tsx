@@ -1,14 +1,15 @@
 import { Suspense, useEffect, useState } from "react";
 import { Container } from "semantic-ui-react";
 import Navbar from "../components/Layout/Navbar";
-import Dashboard from "../components/Layout/Dashboard";
 import { useStore } from "../stores/store";
 import { observer } from "mobx-react-lite";
 import LoaderComponent from "../components/ui/LoaderComponent";
+import { Outlet } from "react-router-dom";
+import agent from "../api/agent";
 
 function App() {
   const { activityStore } = useStore();
-  console.log("App is Running");
+
   useEffect(() => {
     let ignore = false;
     if (!ignore) {
@@ -22,9 +23,16 @@ function App() {
   return (
     <>
       <Navbar />
-      <Container style={{ marginTop: "100px" }}>{activityStore.initialLoading ? <LoaderComponent /> : <Dashboard />}</Container>
+      <div>
+        <Outlet />
+      </div>
     </>
   );
 }
 
 export default observer(App);
+
+export async function loader() {
+  const activities = await agent.Activities.list();
+  return { activities };
+}

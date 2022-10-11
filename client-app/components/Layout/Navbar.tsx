@@ -1,20 +1,22 @@
 import { Button, Container, Menu } from "semantic-ui-react";
 import { useStore } from "../../stores/store";
+import { Link } from "react-router-dom";
 
 function Navbar() {
   const { activityStore } = useStore();
-  console.log("navbar is Running");
 
   return (
     <Menu inverted fixed="top">
       <Container>
-        <Menu.Item header name="Reactivities">
+        <Menu.Item as={Link} to="/" header name="Reactivities">
           <img src="/assets/logo.png" alt="logo" />
           Reactivities
         </Menu.Item>
-        <Menu.Item name="Activities">Activities</Menu.Item>
+        <Menu.Item name="Activities" as={Link} to="/activities">
+          Activities
+        </Menu.Item>
         <Menu.Item>
-          <Button positive content="Create Activity" onClick={activityStore.openCreateForm} />
+          <Button as={Link} to="/createActivity" positive content="Create Activity" />
         </Menu.Item>
       </Container>
     </Menu>
